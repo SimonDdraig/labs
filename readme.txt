@@ -1,1 +1,1 @@
-Hello World
+Welcome to the labs. Please follow the instructions being presented.
