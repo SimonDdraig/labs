@@ -1,6 +1,7 @@
 import json
 import boto3
 import logging
+import os
 
 # Set up logger
 logger = logging.getLogger()
@@ -10,7 +11,15 @@ def lambda_handler(event, context):
     rekognition = boto3.client('rekognition')
     
     try:
-        response = rekognition.create_face_liveness_session()
+        response = rekognition.create_face_liveness_session(
+            Settings={
+                'OutputConfig': {
+                    'S3Bucket': os.environ['S3'],
+                    'S3KeyPrefix': 'images'
+                },
+                'AuditImagesLimit': 4  # Optional: Set the number of audit images to store (0-4)
+            }
+        )
         session_id = response['SessionId']
         
         # Log the session ID

@@ -3,12 +3,6 @@ import { Amplify } from 'aws-amplify';
 import { FaceLivenessDetector } from '@aws-amplify/ui-react-liveness';
 import '@aws-amplify/ui-react/styles.css';
 import './App.css';
-import { Loader } from '@aws-amplify/ui-react';
-import { ThemeProvider } from '@aws-amplify/ui-react';
-import {
-  View,
-  Flex,
-} from '@aws-amplify/ui-react';
 
 import awsexports from './aws-exports';
 
@@ -16,12 +10,13 @@ Amplify.configure(awsexports);
 
 function App() {
   const [sessionId, setSessionId] = useState(null);
-  const [loading, setLoading] = React.useState(true);
   const [livenessResult, setLivenessResult] = useState(null);
+  const [someInfo, setInfo] = useState(null);
   const [error, setError] = useState(null);
   const [isSessionStarted, setIsSessionStarted] = useState(false);
+  const [gettingSession, setGettingSession] = useState(false);
 
-  const apiGatewayUrl = "https://l5uqb1xmfk.execute-api.us-east-1.amazonaws.com/prod";
+  const apiGatewayUrl = "https://zfyixy47h5.execute-api.us-east-1.amazonaws.com/poc";
 
 
   const handleFetchError = async (error, response, method) => {
@@ -49,8 +44,9 @@ function App() {
     const startLivenessSession = async () => {
       if (!isSessionStarted) return;
 
+      setError(null);
+      setGettingSession(true);
       try {
-        setError(null);
         const response = await fetch(`${apiGatewayUrl}/start-liveness-session`, {
           method: 'GET',
         });
@@ -59,10 +55,10 @@ function App() {
         }
         const data = await response.json();
         setSessionId(data.sessionId);
-        setLoading(false);
       } catch (error) {
         await handleFetchError(error, error.response, 'startLivenessSession');
       }
+      setGettingSession(false);
     };
 
     startLivenessSession();
@@ -76,29 +72,23 @@ function App() {
 
     try {
       setError(null);
-      const response = await fetch(`${apiGatewayUrl}/liveness-session-result`, {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ SessionId: sessionId }),
+      setInfo(`Getting results with: ${apiGatewayUrl}/liveness-session-result?SessionId=${sessionId}`)
+
+      const response = await fetch(`${apiGatewayUrl}/liveness-session-result?SessionId=${sessionId}`, {
+        method: 'GET',
       });
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
       const data = await response.json();
       setLivenessResult(data);
+      setSessionId(null);
     } catch (error) {
       await handleFetchError(error, error.response, 'getLivenessResult');
     }
   }, [sessionId, apiGatewayUrl]);
-
-  useEffect(() => {
-    if (sessionId) {
-      getLivenessResult();
-    }
-  }, [sessionId, getLivenessResult]);
 
   const handleAnalysisComplete = useCallback((event) => {
     console.log('Liveness detection completed:', event);
@@ -108,14 +98,59 @@ function App() {
   return (
     <div className="App">
       <h1>Face Liveness Detection</h1>
-      <button onClick={() => setIsSessionStarted(true)}>Start Liveness Session</button>
-      
+      <button onClick={() => setIsSessionStarted(true)}>
+        Start Liveness Session
+      </button>
+
       {error && (
-        <p style={{ color: 'red', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+        <p
+          style={{
+            color: "red",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
           {error}
         </p>
       )}
-      
+
+      {gettingSession && (
+        <p
+          style={{
+            color: "green",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          Getting a session id...
+        </p>
+      )}
+
+      {sessionId && (
+        <p
+          style={{
+            color: "green",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          Got a session id {sessionId}
+        </p>
+      )}
+
+      {someInfo && (
+        <p
+          style={{
+            color: "green",
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
+          }}
+        >
+          {someInfo}
+        </p>
+      )}
+
+
       {sessionId && (
         <FaceLivenessDetector
           sessionId={sessionId}
@@ -123,7 +158,7 @@ function App() {
           onAnalysisComplete={handleAnalysisComplete}
         />
       )}
-      
+
       {livenessResult && (
         <div>
           <h2>Liveness Result</h2>
