@@ -16,7 +16,7 @@ function App() {
   const [isSessionStarted, setIsSessionStarted] = useState(false);
   const [gettingSession, setGettingSession] = useState(false);
 
-  const apiGatewayUrl = "https://zfyixy47h5.execute-api.us-east-1.amazonaws.com/poc";
+  const apiGatewayUrl = "https://7vwbl2m8re.execute-api.us-east-1.amazonaws.com/poc";
 
 
   const handleFetchError = async (error, response, method) => {
