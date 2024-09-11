@@ -1,5 +1,9 @@
 # Simon's Labs
 Welcome to the **Simon's Labs**! This repository contains all the resources, files, and notebooks you'll need to get started with AWS services.
+## Note
+These are typically POC labs and do not feature production hardened solutions. Please ensure if used, you implement best practice security and auth controls where necessary. 
+
+In saying that, all IAM created is typically with least privilege, but public facing services may need additional auth.
 
 ## Setup
 To get started, you'll need to set up your environment. Ensure you have the following prerequisites:
