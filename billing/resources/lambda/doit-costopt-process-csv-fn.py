@@ -22,8 +22,8 @@ def get_parameters(event):
     file_name = event.get("FILE_KEY") or os.environ.get("FILE_KEY")
 
     parameter_source = {
-        "bucket": "event" if "BUCKET_NAME" in event else "environment",
-        "filekey": "event" if "FILE_KEY" in event else "environment",
+        "bucket": "event" if "BUCKET_NAME" in event else "lambda environment vars",
+        "filekey": "event" if "FILE_KEY" in event else "lambda environment vars",
     }
 
     return bucket_name, file_name, parameter_source
@@ -62,7 +62,8 @@ def process_csv_row(row):
         bool: True if row contains 'gp3' operation, False otherwise
     """
 
-    return row.get("line_item_operation", "").lower() == "gp3"
+    operation = row.get("line_item_operation", "").lower()
+    return "gp3" in operation
 
 
 def read_csv_from_s3(s3_client, bucket_name, file_name):
@@ -153,7 +154,7 @@ def lambda_handler(event, context):
     Raises:
         Various exceptions handled with appropriate error responses
     """
-    
+
     try:
         # Get and validate parameters
         bucket_name, file_name, parameter_source = get_parameters(event)
