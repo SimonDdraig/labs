@@ -112,7 +112,7 @@ def process_csv_content(csv_file):
     return gp3_rows, gp3_count
 
 
-def create_response(bucket_name, file_name, parameter_source, gp3_rows, gp3_count):
+def create_response(s3_client, bucket_name, file_name, parameter_source, md_content):
     """
     Create the formatted response object.
 
@@ -120,22 +120,34 @@ def create_response(bucket_name, file_name, parameter_source, gp3_rows, gp3_coun
         bucket_name (str): Name of the S3 bucket
         file_name (str): Name of the processed file
         parameter_source (dict): Source of parameters
-        gp3_rows (list): List of matching rows
-        gp3_count (int): Total count of matches
+        md_content (str): Markdown content to write as a file back to the S3 bucket
 
     Returns:
         dict: Formatted response with status code and body
     """
+
+    # Write markdown content to a file in the S3 bucket
+    # Convert string content to bytes
+    encoded_content = md_content.encode('utf-8')
+    
+    # Upload the file to S3
+    s3_client.put_object(
+        Bucket=bucket_name,
+        Key=file_name,
+        Body=encoded_content,
+        ContentType='text/plain'
+    )
+    
+    logger.info(
+        f"Successfully wrote markdown file '{file_name}' to bucket '{bucket_name}'"
+    )
 
     return {
         "statusCode": 200,
         "body": {
             "bucket": bucket_name,
             "filekey": file_name,
-            "parameter_source": parameter_source,
-            "total_gp3_operations": gp3_count,
-            "message": f"Found {gp3_count} rows with gp3 operations",
-            "matched_rows": gp3_rows[:10],  # Limiting to first 10 matches
+            "parameter_source": parameter_source
         },
     }
 
@@ -170,21 +182,27 @@ def lambda_handler(event, context):
         s3_client = boto3.client("s3")
         csv_file = read_csv_from_s3(s3_client, bucket_name, file_name)
 
-        # Process the CSV content
-        gp3_rows, gp3_count = process_csv_content(csv_file)
-
-        # Create and return response
-        return create_response(
-            bucket_name, file_name, parameter_source, gp3_rows, gp3_count
-        )
-
     except s3_client.exceptions.NoSuchKey:
         return {
             "statusCode": 404,
-            "body": f"File {file_name} not found in bucket {bucket_name}",
+            "body": f"Data export file {file_name} not found in bucket {bucket_name}",
         }
     except s3_client.exceptions.NoSuchBucket:
         return {"statusCode": 404, "body": f"Bucket {bucket_name} does not exist"}
     except Exception as e:
-        logger.error(f"Error processing file: {str(e)}", exc_info=True)
-        return {"statusCode": 500, "body": f"Error processing file: {str(e)}"}
+        logger.error(f"Error processing data export source file: {str(e)}", exc_info=True)
+        return {"statusCode": 500, "body": f"Error processing data export source file: {str(e)}"}
+
+    try:
+        # Process the CSV content
+        md_content = process_csv_content(csv_file)
+
+        # Create and return response
+        return create_response(
+            s3_client, bucket_name, file_name, parameter_source, md_content
+        )
+    except s3_client.exceptions.NoSuchBucket:
+        return {"statusCode": 404, "body": f"Bucket {bucket_name} does not exist"}
+    except Exception as e:
+        logger.error(f"Error processing markdown target file: {str(e)}", exc_info=True)
+        return {"statusCode": 500, "body": f"Error processing markdown target file: {str(e)}"}

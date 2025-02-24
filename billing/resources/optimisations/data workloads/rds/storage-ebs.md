@@ -1,0 +1,5 @@
+    - Check your EBS snapshots  
+      - Save on storage costs  
+      - Ensure your lifecycle policies meet your needs \- can you recover from them past a certain age, and do they meet audit requirements  
+      - Check manually created snapshots as these don't have an eol  
+      - Consider long term storage methods if you need to keep them long term such as snapshot export to S3 (as parquet if you need to search them occasionally), and cheaper tier storage, eg glacier instance retrieval  

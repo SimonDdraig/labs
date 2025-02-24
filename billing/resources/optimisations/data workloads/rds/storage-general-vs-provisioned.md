@@ -1,0 +1,11 @@
+    - Check general purpose vs provisioned storage options depending on your use case. For example:  
+      - 1000 GiB of Storage  
+        - General Purpose SSD (gp3) \- 12,000 IOPS  
+          - Storage pricing (monthly): $138  
+          - Cost-effective storage that is ideal for a broad range of workloads running on medium-sized DB instances  
+          - Latency of single-digit millisecond, provided consistently 99% of the time  
+        - Provisioned IOPS 2 SSD \- 12,000 IOPS  
+          - Storage pricing (monthly): $248  
+          - Designed to meet the needs of I/O-intensive workloads  
+          - Latency of sub-millisecond, provided consistently 99.9% of the time  
+          - If you are currently using IO1, IO2 is priced the same but with better performance  

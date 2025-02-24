@@ -1,0 +1,67 @@
+{
+  "Files": [
+    {
+      "File": "header",
+      "Header": "",
+      "Service": "RDS|AURORA",
+      "Column": "",
+      "Keywords": "GENERAL"
+    },
+    {
+      "File": "storage-header",
+      "Header": "header",
+      "Service": "RDS|AURORA",
+      "Column": "",
+      "Keywords": "GENERAL"
+    },
+    {
+      "File": "storage-gp2",
+      "Header": "storage-header",
+      "Service": "RDS",
+      "Column": "line_item_operation",
+      "Keywords": "gp2"
+    },
+    {
+      "File": "storage-general-vs-provisioned",
+      "Header": "storage-header",
+      "Service": "RDS",
+      "Column": "",
+      "Keywords": "GENERAL"
+    },
+    {
+      "File": "storage-ebs",
+      "Header": "storage-header",
+      "Service": "RDS|AURORA",
+      "Column": "",
+      "Keywords": "GENERAL"
+    },
+    {
+      "File": "family-header",
+      "Header": "header",
+      "Service": "RDS|AURORA",
+      "Column": "",
+      "Keywords": "GENERAL"
+    },
+    {
+      "File": "family-non-graviton",
+      "Header": "family-header",
+      "Service": "RDS|AURORA",
+      "Column": "???",
+      "Keywords": "!g."
+    },
+    {
+      "File": "family-burstable",
+      "Header": "family-header",
+      "Service": "RDS|AURORA",
+      "Column": "???",
+      "Keywords": "db.t"
+    },
+    {
+      "File": "family-sizing",
+      "Header": "family-header",
+      "Service": "RDS|AURORA",
+      "Column": "",
+      "Keywords": "GENERAL"
+    }
+  ]
+}
