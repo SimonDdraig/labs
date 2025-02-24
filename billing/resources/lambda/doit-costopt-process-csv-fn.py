@@ -4,6 +4,7 @@ import csv
 import io
 import os
 import logging
+import requests
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -20,16 +21,18 @@ def get_parameters(event):
 
     bucket_name = event.get("BUCKET_NAME") or os.environ.get("BUCKET_NAME")
     file_name = event.get("FILE_KEY") or os.environ.get("FILE_KEY")
+    github_raw_url = event.get("GITHUB") or os.environ.get("GITHUB")
 
     parameter_source = {
         "bucket": "event" if "BUCKET_NAME" in event else "lambda environment vars",
         "filekey": "event" if "FILE_KEY" in event else "lambda environment vars",
+        "github": "event" if "GITHUB" in event else "lambda environment vars",
     }
 
-    return bucket_name, file_name, parameter_source
+    return bucket_name, file_name, github_raw_url, parameter_source
 
 
-def validate_parameters(bucket_name, file_name):
+def validate_parameters(bucket_name, file_name, github_raw_url):
     """
     Validate that required parameters are present and not empty.
 
@@ -41,14 +44,69 @@ def validate_parameters(bucket_name, file_name):
         dict or None: Error response dictionary if validation fails, None if successful
     """
     
-    if not bucket_name or not file_name:
+    if not bucket_name or not file_name or not github_raw_url:
         return {
             "statusCode": 400,
-            "body": "Missing required parameters: bucket and filekey. "
+            "body": "Missing required parameters: bucket, filekey and github. "
             "Please provide them either in the event or as environment variables "
-            "BUCKET_NAME and FILE_KEY",
+            "BUCKET_NAME, FILE_KEY and GITHUB",
         }
     return None
+
+
+def read_github_json(github_raw_url):
+    """
+    Read and parse JSON file from GitHub raw content.
+    
+    Args:
+        github_raw_url (str): Raw content URL for the GitHub JSON file
+    
+    Returns:
+        dict: Parsed JSON data if successful, None if failed
+    """
+    try:
+        response = requests.get(github_raw_url)
+        response.raise_for_status()
+        
+        data = response.json()
+        logger.info("Successfully read JSON file from GitHub")
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching JSON from GitHub: {str(e)}", exc_info=True)
+        return None
+    except json.JSONDecodeError as e:
+        logger.error(f"Error parsing JSON content: {str(e)}", exc_info=True)
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        return None
+
+
+def read_github_md(github_raw_url):
+    """
+    Read markdown from GitHub raw content.
+    
+    Args:
+        github_raw_url (str): Raw content URL for the GitHub file
+    
+    Returns:
+        dict: markdown if successful, None if failed
+    """
+    try:
+        response = requests.get(github_raw_url)
+        response.raise_for_status()
+        
+        data = response.text()
+        logger.info("Successfully read md file from GitHub")
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Error fetching markdown from GitHub: {str(e)}", exc_info=True)
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error: {str(e)}", exc_info=True)
+        return None
 
 
 def process_csv_row(row):
@@ -87,7 +145,7 @@ def read_csv_from_s3(s3_client, bucket_name, file_name):
     return io.StringIO(file_content)
 
 
-def process_csv_content(csv_file):
+def process_csv_content(csv_file, github_raw_url):
     """
     Process CSV content and collect matching rows.
 
@@ -99,6 +157,24 @@ def process_csv_content(csv_file):
             - list: Matching rows from CSV
             - int: Count of matching rows
     """
+
+    # get the json that comntains the collection of markdown recommendations we should consider
+    recommendationsJson = read_github_json('{}recommendations.json'.format(github_raw_url))
+    markdownContent = []
+
+    # iterate through the collection to process the requirements for each markdown recommendation
+    files = recommendationsJson.get('Files', [])
+    for file_entry in files:
+        file_name = file_entry.get('File', '')
+        header = file_entry.get('Header', '')
+        service = file_entry.get('Service', '')
+        column = file_entry.get('Column', '')
+        keywords = file_entry.get('Keywords', '')
+
+        if keywords == 'GENERAL':
+            # just grab the markdown as we dont need to do any searching
+            markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
+            markdownContent.append(markdown)
 
     csv_reader = csv.DictReader(csv_file)
     gp3_rows = []
@@ -169,14 +245,15 @@ def lambda_handler(event, context):
 
     try:
         # Get and validate parameters
-        bucket_name, file_name, parameter_source = get_parameters(event)
-        validation_error = validate_parameters(bucket_name, file_name)
+        bucket_name, file_name, github_raw_url, parameter_source = get_parameters(event)
+        validation_error = validate_parameters(bucket_name, file_name, github_raw_url)
         if validation_error:
             return validation_error
 
         # Log parameter sources
         logger.info(f"Using bucket: {bucket_name} (from {parameter_source['bucket']})")
         logger.info(f"Using file: {file_name} (from {parameter_source['filekey']})")
+        logger.info(f"Using github: {github_raw_url} (from {parameter_source['github']})")
 
         # Initialize S3 client and read file
         s3_client = boto3.client("s3")
@@ -195,7 +272,7 @@ def lambda_handler(event, context):
 
     try:
         # Process the CSV content
-        md_content = process_csv_content(csv_file)
+        md_content = process_csv_content(csv_file, github_raw_url)
 
         # Create and return response
         return create_response(
