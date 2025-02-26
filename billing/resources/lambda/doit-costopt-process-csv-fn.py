@@ -143,6 +143,7 @@ def process_csv_row(row, keywords, columns):
         
         if keyword not in column_value:  
             return False
+        logger.info('FOUND: keyword:{} in column:{} containing:{}'.format(keyword, column, column_value))
 
     return True
 
@@ -202,14 +203,16 @@ def process_csv_content(csv_file, github_raw_url):
         service = file_entry.get('Service', '')
         columns = file_entry.get('Columns', '').split('|')
         keywords = file_entry.get('Keywords', '').split('|')
-        
-        if keywords == 'GENERAL':
+        logger.info('Looking for keywords: {} in columns: {}'.format(keywords, columns))
+
+        if keywords[0] == 'GENERAL':
             # just grab the markdown as we dont need to do any searching
             markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
             markdownContent.append(markdown)
         else:
             # how are we handling the CSV file - if from an S3 stream we need to refetch it for each iteration through recomendations
             if csvFile=='STREAM':
+                csv_file.seek(0)
                 csv_reader = csv.DictReader(csv_file)
 
             for row in csv_reader:
