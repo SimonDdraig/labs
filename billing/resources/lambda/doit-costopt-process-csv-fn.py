@@ -217,6 +217,8 @@ def process_csv_content(csv_file, github_raw_url):
                     # grab the markdown appropriate for the keyword just found
                     markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
                     markdownContent.append(markdown)
+                    # we've found one, so lets jump out otherwise we might repeat advice
+                    break
 
     return markdownContent
 

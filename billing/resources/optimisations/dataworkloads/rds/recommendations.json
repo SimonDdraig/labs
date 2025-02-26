@@ -36,15 +36,17 @@
       "File": "family-non-graviton",
       "Parent": "family-header",
       "Service": "RDS|AURORA",
-      "Columns": "???",
-      "Keywords": "!g."
+      "Columns": "product_instance_type|line_item_product_code",
+      "Keywords": "!g.|AmazonRDS",
+      "Description": "Used if any RDS or Aurora instance is found, and its not graviton"
     },
     {
       "File": "family-burstable",
       "Parent": "family-header",
       "Service": "RDS|AURORA",
       "Columns": "product_instance_type|line_item_product_code",
-      "Keywords": "db.t|AmazonRDS"
+      "Keywords": "db.t|AmazonRDS",
+      "Description": "Used if any RDS or Aurora instance is found, and its a burstable"
     },
     {
       "File": "general-header",
