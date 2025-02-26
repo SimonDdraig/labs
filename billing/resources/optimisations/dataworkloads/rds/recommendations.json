@@ -1,67 +1,98 @@
 {
   "Files": [
     {
-      "File": "header",
-      "Header": "",
+      "File": "specific-header",
+      "Parent": "",
       "Service": "RDS|AURORA",
-      "Column": "",
-      "Keywords": "GENERAL"
+      "Columns": "line_item_product_code",
+      "Keywords": "AmazonRDS",
+      "Description": "Used if any RDS or Aurora instance is found, assumes there will be recommendations to make"
     },
     {
       "File": "storage-header",
-      "Header": "header",
+      "Parent": "specific-header",
       "Service": "RDS|AURORA",
-      "Column": "",
-      "Keywords": "GENERAL"
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Header for storage"
     },
     {
       "File": "storage-gp2",
-      "Header": "storage-header",
+      "Parent": "storage-header",
       "Service": "RDS",
-      "Column": "line_item_operation",
-      "Keywords": "gp2"
-    },
-    {
-      "File": "storage-general-vs-provisioned",
-      "Header": "storage-header",
-      "Service": "RDS",
-      "Column": "",
-      "Keywords": "GENERAL"
-    },
-    {
-      "File": "storage-ebs",
-      "Header": "storage-header",
-      "Service": "RDS|AURORA",
-      "Column": "",
-      "Keywords": "GENERAL"
+      "Columns": "line_item_line_item_description|line_item_product_code",
+      "Keywords": "gp2|AmazonRDS",
+      "Description": "Advice if any gp2 volumes are found, these will be rds instances not aurora"
     },
     {
       "File": "family-header",
-      "Header": "header",
+      "Parent": "specific-header",
       "Service": "RDS|AURORA",
-      "Column": "",
-      "Keywords": "GENERAL"
+      "Columns": "line_item_product_code",
+      "Keywords": "AmazonRDS",
+      "Description": "Used if any RDS or Aurora instance is found, assumes there will be recommendations to make"
     },
     {
       "File": "family-non-graviton",
-      "Header": "family-header",
+      "Parent": "family-header",
       "Service": "RDS|AURORA",
-      "Column": "???",
+      "Columns": "???",
       "Keywords": "!g."
     },
     {
       "File": "family-burstable",
-      "Header": "family-header",
+      "Parent": "family-header",
       "Service": "RDS|AURORA",
-      "Column": "???",
-      "Keywords": "db.t"
+      "Columns": "product_instance_type|line_item_product_code",
+      "Keywords": "db.t|AmazonRDS"
+    },
+    {
+      "File": "general-header",
+      "Parent": "",
+      "Service": "RDS|AURORA",
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Gives general advice regardless of architecture found"
+    },
+    {
+      "File": "storage-header",
+      "Parent": "general-header",
+      "Service": "RDS|AURORA",
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Header for storage"
+    },
+    {
+      "File": "storage-general-vs-provisioned",
+      "Parent": "storage-header",
+      "Service": "RDS",
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Advice about gp2/gp3/io1/io2"
+    },
+    {
+      "File": "storage-snapshots",
+      "Parent": "storage-header",
+      "Service": "RDS|AURORA",
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Advice about cleaning up snapshots"
+    },
+    {
+      "File": "family-header",
+      "Parent": "general-header",
+      "Service": "RDS|AURORA",
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Gives general advice regardless of architecture found"
     },
     {
       "File": "family-sizing",
-      "Header": "family-header",
+      "Parent": "family-header",
       "Service": "RDS|AURORA",
-      "Column": "",
-      "Keywords": "GENERAL"
+      "Columns": "",
+      "Keywords": "GENERAL",
+      "Description": "Advice about sizing an instance"
     }
   ]
 }

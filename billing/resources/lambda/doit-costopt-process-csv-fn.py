@@ -9,6 +9,13 @@ import requests
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+# using STREAM, the data export CSV file is retrieved from S3, and passed back as a stream, it is then fetched and used, and fetched again for each 
+# array item in recommendations.json - use if the file is > available memory - can be slower though due to S3 fetch
+csvFile='STREAM'
+# using MEMORY, the data export CSV file is retrieved from S3, and passed back as a stream, however it is then stored as a list in memory - faster 
+# than above to iterate through as it does not have to repeatedly fecth from S3
+#csvFile='MEMORY'
+
 def get_parameters(event):
     """Extract parameters from event or environment variables.
     
@@ -64,12 +71,15 @@ def read_github_json(github_raw_url):
     Returns:
         dict: Parsed JSON data if successful, None if failed
     """
+
+    logger.info("Will read JSON file from GitHub: {}".format(github_raw_url))
+
     try:
         response = requests.get(github_raw_url)
         response.raise_for_status()
-        
+
         data = response.json()
-        logger.info("Successfully read JSON file from GitHub")
+        logger.info("Will use JSON recommendations: {}".format(data))
         return data
         
     except requests.exceptions.RequestException as e:
@@ -93,11 +103,13 @@ def read_github_md(github_raw_url):
     Returns:
         dict: markdown if successful, None if failed
     """
+
+    logger.info('Processing recommendation for {}'.format(github_raw_url))
     try:
         response = requests.get(github_raw_url)
         response.raise_for_status()
         
-        data = response.text()
+        data = response.text
         logger.info("Successfully read md file from GitHub")
         return data
         
@@ -109,24 +121,38 @@ def read_github_md(github_raw_url):
         return None
 
 
-def process_csv_row(row):
+def process_csv_row(row, keywords, columns):
     """
     Process a single CSV row and determine if it matches criteria.
+    We keywords and columns are lists, so it checks if the keyword is present in its corresponding column
 
     Args:
         row (dict): Dictionary containing CSV row data with 'line_item_operation' key
+        keywords (list): Keywords to search for
+        columns (list): Columns to search in 
 
     Returns:
-        bool: True if row contains 'gp3' operation, False otherwise
+        bool: True if row contains keyword(2) in relevant column(s), False otherwise
     """
 
-    operation = row.get("line_item_operation", "").lower()
-    return "gp3" in operation
+    # Check if each keyword appears only in its corresponding column
+    for i in range(len(columns)):  
+        column = columns[i]
+        keyword = keywords[i].lower()
+        column_value = row.get(column, "").lower()
+        
+        if keyword not in column_value:  
+            return False
+
+    return True
 
 
 def read_csv_from_s3(s3_client, bucket_name, file_name):
     """
-    Read and process CSV file from S3 bucket.
+    Read and process data export CUR2.0 CSV file from S3 bucket
+    Returns a list held in memory so we don't have to fetch from S3 multiple times each time we iterate through it
+    If the file is > available memory, then return as a stream instead and fetch it for each iteration - see hardcoded var above to switch
+    If files are > very large, refactor code to replace csv with pandas
 
     Args:
         s3_client (boto3.client): Initialized boto3 S3 client
@@ -158,37 +184,44 @@ def process_csv_content(csv_file, github_raw_url):
             - int: Count of matching rows
     """
 
-    # get the json that comntains the collection of markdown recommendations we should consider
+    # get the json that contains the collection of markdown recommendations we should consider
     recommendationsJson = read_github_json('{}recommendations.json'.format(github_raw_url))
     markdownContent = []
 
     # iterate through the collection to process the requirements for each markdown recommendation
     files = recommendationsJson.get('Files', [])
+
+    # how are we handling the CSV file
+    if csvFile=='MEMORY':
+        csv_reader = list(csv.DictReader(csv_file))
+
+    # iterate through recommendations.json
     for file_entry in files:
         file_name = file_entry.get('File', '')
-        header = file_entry.get('Header', '')
+        parent = file_entry.get('Parent', '')
         service = file_entry.get('Service', '')
-        column = file_entry.get('Column', '')
-        keywords = file_entry.get('Keywords', '')
-
+        columns = file_entry.get('Columns', '').split('|')
+        keywords = file_entry.get('Keywords', '').split('|')
+        
         if keywords == 'GENERAL':
             # just grab the markdown as we dont need to do any searching
             markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
             markdownContent.append(markdown)
+        else:
+            # how are we handling the CSV file - if from an S3 stream we need to refetch it for each iteration through recomendations
+            if csvFile=='STREAM':
+                csv_reader = csv.DictReader(csv_file)
 
-    csv_reader = csv.DictReader(csv_file)
-    gp3_rows = []
-    gp3_count = 0
+            for row in csv_reader:
+                if process_csv_row(row, keywords, columns):
+                    # grab the markdown appropriate for the keyword just found
+                    markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
+                    markdownContent.append(markdown)
 
-    for row in csv_reader:
-        if process_csv_row(row):
-            gp3_count += 1
-            gp3_rows.append(row)
-
-    return gp3_rows, gp3_count
+    return markdownContent
 
 
-def create_response(s3_client, bucket_name, file_name, parameter_source, md_content):
+def create_response(s3_client, bucket_name, file_name, parameter_source, md_content, md_file_name):
     """
     Create the formatted response object.
 
@@ -197,6 +230,7 @@ def create_response(s3_client, bucket_name, file_name, parameter_source, md_cont
         file_name (str): Name of the processed file
         parameter_source (dict): Source of parameters
         md_content (str): Markdown content to write as a file back to the S3 bucket
+        md_file_name (str): Name of the markdown file
 
     Returns:
         dict: Formatted response with status code and body
@@ -204,25 +238,26 @@ def create_response(s3_client, bucket_name, file_name, parameter_source, md_cont
 
     # Write markdown content to a file in the S3 bucket
     # Convert string content to bytes
-    encoded_content = md_content.encode('utf-8')
-    
+    md_content_str = "\n\n".join(md_content)  # Join list into a string
+    encoded_content = md_content_str.encode('utf-8')  # Encode as UTF-8
+
     # Upload the file to S3
     s3_client.put_object(
         Bucket=bucket_name,
-        Key=file_name,
+        Key=md_file_name,
         Body=encoded_content,
-        ContentType='text/plain'
+        ContentType='text/markdown'
     )
     
     logger.info(
-        f"Successfully wrote markdown file '{file_name}' to bucket '{bucket_name}'"
+        f"Successfully wrote markdown file '{md_file_name}' to bucket '{bucket_name}'"
     )
 
     return {
         "statusCode": 200,
         "body": {
             "bucket": bucket_name,
-            "filekey": file_name,
+            "filekey": md_file_name,
             "parameter_source": parameter_source
         },
     }
@@ -275,8 +310,9 @@ def lambda_handler(event, context):
         md_content = process_csv_content(csv_file, github_raw_url)
 
         # Create and return response
+        md_file_name = file_name.replace(".csv", ".md")
         return create_response(
-            s3_client, bucket_name, file_name, parameter_source, md_content
+            s3_client, bucket_name, file_name, parameter_source, md_content, md_file_name
         )
     except s3_client.exceptions.NoSuchBucket:
         return {"statusCode": 404, "body": f"Bucket {bucket_name} does not exist"}
