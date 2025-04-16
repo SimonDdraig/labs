@@ -1,16 +1,16 @@
 {
   "Files": [
     {
-      "File": "specific-header",
+      "File": "mandatory-header",
       "Parent": "",
       "Service": "RDS|AURORA",
       "Columns": "line_item_product_code",
       "Keywords": "AmazonRDS",
-      "Description": "Used if any RDS or Aurora instance is found, assumes there will be recommendations to make"
+      "Description": "Used if any RDS or Aurora instance is found, assumes there will be recommendations to make if found, exits service if not"
     },
     {
       "File": "storage-header",
-      "Parent": "specific-header",
+      "Parent": "mandatory-header",
       "Service": "RDS|AURORA",
       "Columns": "",
       "Keywords": "GENERAL",
@@ -25,8 +25,16 @@
       "Description": "Advice if any gp2 volumes are found, these will be rds instances not aurora"
     },
     {
+      "File": "storage-io2",
+      "Parent": "storage-header",
+      "Service": "RDS",
+      "Columns": "line_item_line_item_description|line_item_product_code",
+      "Keywords": "io2|AmazonRDS",
+      "Description": "NOTE NOT TESTED!!! Advice if any io2 usage is found, these will be rds instances not aurora"
+    },
+    {
       "File": "family-header",
-      "Parent": "specific-header",
+      "Parent": "mandatory-header",
       "Service": "RDS|AURORA",
       "Columns": "line_item_product_code",
       "Keywords": "AmazonRDS",
@@ -38,7 +46,7 @@
       "Service": "RDS|AURORA",
       "Columns": "product_instance_type|line_item_product_code",
       "Keywords": "!g.|AmazonRDS",
-      "Description": "Used if any RDS or Aurora instance is found, and its not graviton"
+      "Description": "NOTE NOT TESTED!!! Used if any RDS or Aurora instance is found, and its not graviton"
     },
     {
       "File": "family-burstable",
@@ -50,7 +58,7 @@
     },
     {
       "File": "general-header",
-      "Parent": "",
+      "Parent": "mandatory-header",
       "Service": "RDS|AURORA",
       "Columns": "",
       "Keywords": "GENERAL",
@@ -63,14 +71,6 @@
       "Columns": "",
       "Keywords": "GENERAL",
       "Description": "Header for storage"
-    },
-    {
-      "File": "storage-general-vs-provisioned",
-      "Parent": "storage-header",
-      "Service": "RDS",
-      "Columns": "",
-      "Keywords": "GENERAL",
-      "Description": "Advice about gp2/gp3/io1/io2"
     },
     {
       "File": "storage-snapshots",

@@ -11,9 +11,9 @@ logger.setLevel(logging.INFO)
 
 # using STREAM, the data export CSV file is retrieved from S3, and passed back as a stream, it is then fetched and used, and fetched again for each 
 # array item in recommendations.json - use if the file is > available memory - can be slower though due to S3 fetch
-csvFile='STREAM'
 # using MEMORY, the data export CSV file is retrieved from S3, and passed back as a stream, however it is then stored as a list in memory - faster 
-# than above to iterate through as it does not have to repeatedly fecth from S3
+# than above to iterate through as it does not have to repeatedly fetch from S3
+csvFile='STREAM'
 #csvFile='MEMORY'
 
 def get_parameters(event):
@@ -188,6 +188,7 @@ def process_csv_content(csv_file, github_raw_url):
     # get the json that contains the collection of markdown recommendations we should consider
     recommendationsJson = read_github_json('{}recommendations.json'.format(github_raw_url))
     markdownContent = []
+    foundEntry = False
 
     # iterate through the collection to process the requirements for each markdown recommendation
     files = recommendationsJson.get('Files', [])
@@ -221,7 +222,13 @@ def process_csv_content(csv_file, github_raw_url):
                     markdown = read_github_md('{}{}.md'.format(github_raw_url,file_name))
                     markdownContent.append(markdown)
                     # we've found one, so lets jump out otherwise we might repeat advice
+                    foundEntry=True
                     break
+
+        # lets check if we either continue processing the file, or abandon it if the service is not present in the csv_file but its mandatory
+        if file_name == 'mandatory-header' and not foundEntry:
+            logger.info('Service {} not found in CSV file, skipping this recommendations file'.format(service))
+            break
 
     return markdownContent
 

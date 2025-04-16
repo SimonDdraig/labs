@@ -1,0 +1,19 @@
+    - For a production application that requires fast and consistent I/O performance, AWS recommends Provisioned IOPS storage  
+    - It is optimized for online transaction processing (OLTP) workloads that require consistent performance  
+    - You have io2 in your environment, but make sure you have considered the pricing of io2 if you have chosen it without requiring the higher IOPS  
+    - For example, if we compare a gp3 with an io2 with both having 400 GiB and 12,000 IOPS:  
+      - 400 GiB of Storage and above  
+        - General Purpose SSD (gp3) - 12,000 IOPS (default for 400 GiB and free)  
+          - Storage pricing (monthly us-east-1 usd): $92.00  
+          - Cost-effective storage that is ideal for a broad range of workloads running on medium-sized DB instances 
+          - Reasonably consistent, but can show jitter under heavy load  
+          - Latency of single-digit millisecond, provided consistently 99.8-99.9% of the time  
+          - Less then 400 GiB and you get 3000 IOPS for free
+        - Provisioned IOPS 2 - 12,000 IOPS  
+          - Storage pricing (monthly us-east-1 usd): $2500.00  
+          - Designed to meet the needs of I/O-intensive workloads  
+          - Latency of sub-millisecond, provided consistently 99.999% of the time  
+          - Much more stable under high concurrency or burst loads   
+          - If you are currently using io1, io2 is priced the same but with better performance  
+      - Note, make sure the instance class and size can work with the number of IOPS provisioned  
+        - Smaller instances are capped at lower IOPS regardless of what you may provision, and you will stay pay for them  
