@@ -124,7 +124,7 @@ def read_github_md(github_raw_url):
 def process_csv_row(row, keywords, columns):
     """
     Process a single CSV row and determine if it matches criteria.
-    We keywords and columns are lists, so it checks if the keyword is present in its corresponding column
+    The keywords and columns are lists, so it checks if the keyword is present in its corresponding column
 
     Args:
         row (dict): Dictionary containing CSV row data with 'line_item_operation' key

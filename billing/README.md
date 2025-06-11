@@ -65,6 +65,7 @@ Where:
     - **general-header**  
       - This represents a file that contains header/introduction text for a feature of a service  
       - It does not have any Column or Keyword values as does not require conditional logic to be used  
+      - It is always included as general advice
     - ***cccccc*-header**  
       - This represents content to describe a feature (typically the *ccccc*) of the service  
       - Can be used either GENERAL-ly or with conditional logic  
