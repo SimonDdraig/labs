@@ -54,12 +54,12 @@ bedrock_model = BedrockModel(
     model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0", region_name="us-west-2"
 )
 
-# Use the MCP client in a context manager
+# Must use the MCP client in a context manager
 with coingecko_mcp_client:
     # Get the tools from the MCP server
     tools = coingecko_mcp_client.list_tools_sync()
 
-    # Add to your agent's tools
+    # Create the agent and add to the agent's tools
     crypto_agent = Agent(
         name="CryptoFocusedAgent",
         system_prompt=CRYPTO_SYSTEM_PROMPT,
@@ -69,4 +69,6 @@ with coingecko_mcp_client:
 
     # Use the agent
     result = crypto_agent("What's the current price of Bitcoin?")
+    print(result.message)
+    result = crypto_agent("What is Cryptocurrency?")
     print(result.message)
