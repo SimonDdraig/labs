@@ -4,18 +4,29 @@
   2. if running in AWS services like EC2, ECS, or Lambda, use IAM roles
   3. can also use environment variables, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, and optionally AWS_SESSION_TOKEN
 Make sure your AWS credentials have the necessary permissions to access Amazon Bedrock and invoke the Bedrock model. 
+
+**model access**
 You'll need to enable model access in the Amazon Bedrock console.
+
+**links**
 https://strandsagents.com/latest/user-guide/quickstart/#configuring-credentials
 """
+
+# This example queries the Coin Gecko MCP asking for a live token price and a further question about crypto
 
 from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from strands_tools import http_request, calculator, current_time
 from mcp import stdio_client, StdioServerParameters
-import os
 
-# Define a crypto-focused system prompt
+# inference model to use
+inference_model="us.anthropic.claude-3-7-sonnet-20250219-v1:0"
+
+# region
+region="us-west-2"
+
+# define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
 You are an assistant with two main roles. 
 
@@ -49,22 +60,22 @@ coingecko_mcp_client = MCPClient(
 )
 
 
-# Create a BedrockModel with specific region
+# Create a BedrockModel with specific LLM and region
 bedrock_model = BedrockModel(
-    model_id="us.anthropic.claude-3-7-sonnet-20250219-v1:0", region_name="us-west-2"
+    model_id=inference_model, region_name=region
 )
 
 # Must use the MCP client in a context manager
 with coingecko_mcp_client:
     # Get the tools from the MCP server
-    tools = coingecko_mcp_client.list_tools_sync()
+    coingecko_tools = coingecko_mcp_client.list_tools_sync()
 
-    # Create the agent and add to the agent's tools
+    # Create the strands agent and add to the agent's tools
     crypto_agent = Agent(
         name="CryptoFocusedAgent",
         system_prompt=CRYPTO_SYSTEM_PROMPT,
         model=bedrock_model,
-        tools=[http_request, calculator, current_time] + tools,  # Add MCP tools
+        tools=[http_request, calculator, current_time] + coingecko_tools,  # Add MCP tools
     )
 
     # Use the agent
