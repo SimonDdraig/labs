@@ -18,7 +18,7 @@ LINKS:
 - Retrieve Tool: https://github.com/strands-agents/tools/blob/main/src/strands_tools/retrieve.py
 """
 
-# This example queries the Bedrock knowledge base created in a previous lab
+# This agent queries the Bedrock knowledge base created in a previous lab
 # You will need to know its ID
 
 from strands import Agent
@@ -137,8 +137,9 @@ def main():
     educator = CryptoEducator()
     
     if args.question:
-        # Process command-line question
+        # Single query mode - Process command-line question
         result = educator.query(args.question)
+        print(f"\n{result['answer']}\n")
     else:
         # Interactive mode
         print("Crypto Educator Agent (type 'exit' to quit)")

@@ -103,7 +103,7 @@ kb_agent = Agent(
 response = kb_agent("How do I ensure a cryptocurrency token is legitimate and not a scam?")
 
 # Print token usage and metrics
-print(f"Total tokens: {response.metrics.accumulated_usage['totalTokens']}")
+print(f"\nTotal tokens: {response.metrics.accumulated_usage['totalTokens']}")
 print(f"Input tokens: {response.metrics.accumulated_usage['inputTokens']}")
 print(f"Output tokens: {response.metrics.accumulated_usage['outputTokens']}")
 print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")

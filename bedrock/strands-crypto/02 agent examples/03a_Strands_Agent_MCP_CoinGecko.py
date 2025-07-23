@@ -17,13 +17,11 @@ LINKS:
 from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
-from strands_tools import http_request, calculator, current_time
 from mcp import stdio_client, StdioServerParameters
 
-# inference model to use
+# Parsing model to use
 inference_model = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-
-# region
+# AWS region
 region = "us-west-2"
 
 # define a crypto-focused system prompt
@@ -106,7 +104,7 @@ with coingecko_mcp_client:
 
     # Create the strands agent and add to the agent's tools
     crypto_agent = Agent(
-        name="CryptoFocusedAgent",
+        name="CryptoMarketAnalystAgent",
         system_prompt=CRYPTO_SYSTEM_PROMPT,
         model=bedrock_model,
         tools=coingecko_tools,
