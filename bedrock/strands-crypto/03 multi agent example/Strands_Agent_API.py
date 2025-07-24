@@ -22,10 +22,9 @@ LINKS:
 
 # This example queries the goplus api
 
-from strands import Agent
+from strands import Agent, tool
 from strands.models import BedrockModel
 from strands_tools import http_request
-import argparse
 from config import INFERENCE_MODEL, REGION
 
 # Define a crypto-focused system prompt
@@ -95,68 +94,29 @@ If the API fails or the token is not found:
 - Never provide investment recommendations.
 """
 
-class CryptoSecurityAnalyzer:
-    def __init__(self):
-        self.agent = self._initialize_agent()
+@tool
+def crypto_security_analyzer(query: str) -> str:
+   """
+   Process and respond to security risks of cryptocurrency token queries.
 
-    def _initialize_agent(self):
-        """Initialize the Bedrock model and crypto agent"""
-        bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+   Args:
+      query: A cryptocurrency token risk assessment question.
 
-        # NOTE conversational context is preserved within the Agent object itself, as long as it is running
-        # if your agent cannot be kept running (eg hosted in a Lambda) use session management
-        # https://strandsagents.com/latest/documentation/docs/user-guide/concepts/agents/session-management/
-        return Agent(
-            name="CryptoSecurityAnalyzer",
-            system_prompt=CRYPTO_SYSTEM_PROMPT,
-            model=bedrock_model,
-            tools=[http_request],
-        )
+   Returns:
+      A detailed and helpful token risk analysis with citations
+   """
 
-    def query(self, question):
-        """Query the agent and return formatted response"""
-        response = self.agent(question)
+   # Create a BedrockModel with specific LLM and region
+   bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
 
-        # Format the output
-        result = {
-            "answer": str(response),
-            "metrics": {
-                "total_tokens": response.metrics.accumulated_usage["totalTokens"],
-                "input_tokens": response.metrics.accumulated_usage["inputTokens"],
-                "output_tokens": response.metrics.accumulated_usage["outputTokens"],
-                "execution_time": f"{sum(response.metrics.cycle_durations):.2f}s",
-                "tools_used": list(response.metrics.tool_metrics.keys()),
-            },
-        }
-        return result
+   # Create the strands agent and add the KB to the agent's tools
+   kb_agent = Agent(
+      name="CryptoRiskDetectionAgent",
+      system_prompt=CRYPTO_SYSTEM_PROMPT,
+      model=bedrock_model,
+      tools=[http_request],
+   )
 
-
-def main():
-    parser = argparse.ArgumentParser(description="Crypto Security Analyzer Agent")
-    parser.add_argument("question", nargs="?", help="Your crypto question")
-    args = parser.parse_args()
-
-    educator = CryptoSecurityAnalyzer()
-
-    if args.question:
-        # Single query mode - Process command-line question
-        result = educator.query(args.question)
-        print(f"\n{result['answer']}\n")
-    else:
-        # Interactive mode
-        print("Crypto Security Analyzer Agent (type 'exit' to quit)")
-        while True:
-            question = input("\nYour question: ").strip()
-            if question.lower() in ("exit", "quit"):
-                break
-            if question:
-                result = educator.query(question)
-
-    # Print results
-    print("\n=== METRICS ===")
-    for k, v in result["metrics"].items():
-        print(f"{k.replace('_', ' ').title()}: {v}")
-
-
-if __name__ == "__main__":
-    main()
+   # Query the agent
+   response = kb_agent(query)
+   return response

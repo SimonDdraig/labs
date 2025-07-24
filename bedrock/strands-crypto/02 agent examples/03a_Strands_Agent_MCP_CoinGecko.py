@@ -18,11 +18,7 @@ from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp import stdio_client, StdioServerParameters
-
-# Parsing model to use
-inference_model = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-# AWS region
-region = "us-west-2"
+from config import INFERENCE_MODEL, REGION
 
 # define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
@@ -95,7 +91,7 @@ coingecko_mcp_client = MCPClient(
 )
 
 # Create a BedrockModel with specific LLM and region
-bedrock_model = BedrockModel(model_id=inference_model, region_name=region)
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
 
 # Must use the MCP client in a context manager
 with coingecko_mcp_client:

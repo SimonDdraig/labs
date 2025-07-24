@@ -7,31 +7,25 @@ SETUP INSTRUCTIONS:
    - Cloud (EC2/ECS/Lambda): Use IAM roles
    - Alternative: Set env vars (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)
 
-2. MODEL ACCESS:
-   - Enable model access in Amazon Bedrock console
+2. API ACCESS:
+   - Enable any API access and auth reqd (none for this example)
 
 3. KNOWLEDGE BASE:
    - Requires pre-configured KB ID (set below)
 
 LINKS:
 - Credentials Guide: https://strandsagents.com/latest/user-guide/quickstart/#configuring-credentials
-- Retrieve Tool: https://github.com/strands-agents/tools/blob/main/src/strands_tools/http_request.py
+- HTTP Request Tool: https://github.com/strands-agents/tools/blob/main/src/strands_tools/http_request.py
 - GoPlus: https://docs.gopluslabs.io/reference/api-overview
 - GoPlus API used: https://api.gopluslabs.io/api/v1/token_security/{chain_id}
 """
 
-# This example queries the Bedrock knowledge base created in a previous lab
-# You will need to know its ID
+# This example queries the goplus api
 
 from strands import Agent
 from strands.models import BedrockModel
 from strands_tools import http_request
-
-# inference model to use
-inference_model = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-
-# region
-region = "us-west-2"
+from config import INFERENCE_MODEL, REGION
 
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
@@ -101,8 +95,7 @@ If the API fails or the token is not found:
 """
 
 # Create a BedrockModel with specific LLM and region
-# here we also provide a session so Strands can maintain a conversation
-bedrock_model = BedrockModel(model_id=inference_model, region_name=region)
+bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
 
 # Create the strands agent and add the KB to the agent's tools
 kb_agent = Agent(
@@ -112,7 +105,7 @@ kb_agent = Agent(
     tools=[http_request],
 )
 
-# Query your Knowledge Base
+# Query the agent
 response = kb_agent("How secure is the USDC coin with contract address 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 on blockchain chain id 1?")
 
 # Print token usage and metrics

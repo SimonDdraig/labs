@@ -21,10 +21,14 @@ LINKS:
 """
 
 from strands import Agent
-from 05_Strands_Agent_KB_Bedrock import crypto_educator
-from 05_Strands_Agent_MCP_CoinGecko import crypto_market_analyst
-from 05_Strands_Agent_API import crypto_security_analyzer
-from 05_Strands_Agent_General import crypto_non_expert_general_advice
+from strands.models import BedrockModel
+from Strands_Agent_KB_Bedrock import crypto_educator
+from Strands_Agent_MCP_CoinGecko import crypto_market_analyst
+from Strands_Agent_API import crypto_security_analyzer
+from Strands_Agent_General import general_knowledge
+from config import INFERENCE_MODEL, REGION
+
+import argparse
 
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
@@ -42,6 +46,7 @@ You are a high-level orchestration agent responsible for understanding user prom
 ## Available Sub-Agents
 ### 1. Crypto Currency Education Sub-Agent
 - **Purpose**: Teach crypto to beginners in a simple, engaging, and supportive way.
+- **Tool: crypto_educator
 - **Handles**:
   - Explaining concepts (e.g., blockchain, wallets, tokens)
   - How to buy, store, or trade crypto
@@ -55,6 +60,7 @@ You are a high-level orchestration agent responsible for understanding user prom
 
 ### 2. Crypto Price & Market Data Sub-Agent
 - **Purpose**: Provide real-time market data.
+- **Tool: crypto_market_analyst
 - **Handles**:
   - Token prices in USD or other currencies
   - Market cap, trading volume, 24h/7d changes
@@ -69,6 +75,7 @@ You are a high-level orchestration agent responsible for understanding user prom
 
 ### 3. Token Security Analyzer Sub-Agent
 - **Purpose**: Assess risks and behaviors of smart contract tokens.
+- **Tool: crypto_security_analyzer
 - **Handles**:
   - Honeypot detection
   - Buy/sell tax info
@@ -83,6 +90,7 @@ You are a high-level orchestration agent responsible for understanding user prom
 
 ### 4. General Assistant Sub-Agent
 - **Purpose**: Handle any prompt **not related to cryptocurrency education, market data, or token security.**
+- **Tool: general_knowledge
 - **Handles**:
   - General questions
   - Tasks outside the crypto domain
@@ -114,3 +122,67 @@ You are a high-level orchestration agent responsible for understanding user prom
 - Always route the full prompt to exactly **one** sub-agent.
 - Always confirm your understanding before routing to ensure accurate assistance.
 """
+class CryptoOrchestrator:
+    def __init__(self):
+        self.agent = self._initialize_agent()
+
+    def _initialize_agent(self):
+        """Initialize the Bedrock model and crypto agent"""
+        bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+
+        # NOTE conversational context is preserved within the Agent object itself, as long as it is running
+        # if your agent cannot be kept running (eg hosted in a Lambda) use session management
+        # https://strandsagents.com/latest/documentation/docs/user-guide/concepts/agents/session-management/
+        return Agent(
+            name="CryptoOrchestrator",
+            system_prompt=CRYPTO_SYSTEM_PROMPT,
+            model=bedrock_model,
+            tools=[crypto_educator, crypto_market_analyst, crypto_security_analyzer, general_knowledge]
+        )
+
+    def query(self, question):
+        """Query the agent and return formatted response"""
+        response = self.agent(question)
+
+        # Format the output
+        result = {
+            "answer": str(response),
+            "metrics": {
+                "total_tokens": response.metrics.accumulated_usage["totalTokens"],
+                "input_tokens": response.metrics.accumulated_usage["inputTokens"],
+                "output_tokens": response.metrics.accumulated_usage["outputTokens"],
+                "execution_time": f"{sum(response.metrics.cycle_durations):.2f}s",
+                "tools_used": list(response.metrics.tool_metrics.keys()),
+            },
+        }
+        return result
+
+def main():
+    parser = argparse.ArgumentParser(description="Crypto Orchestration Agent")
+    parser.add_argument("question", nargs="?", help="Your crypto question")
+    args = parser.parse_args()
+
+    orchestrator = CryptoOrchestrator()
+
+    if args.question:
+        # Single query mode - Process command-line question
+        result = orchestrator.query(args.question)
+        print(f"\n{result['answer']}\n")
+    else:
+        # Interactive mode
+        print("Crypto Orchestrator Agent (type 'exit' to quit)")
+        while True:
+            question = input("\nYour question: ").strip()
+            if question.lower() in ("exit", "quit"):
+                break
+            if question:
+                result = orchestrator.query(question)
+
+    # Print results
+    print("\n=== METRICS ===")
+    for k, v in result["metrics"].items():
+        print(f"{k.replace('_', ' ').title()}: {v}")
+
+
+if __name__ == "__main__":
+    main()

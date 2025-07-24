@@ -24,18 +24,11 @@ LINKS:
 from strands import Agent
 from strands.models import BedrockModel
 from strands_tools import retrieve
+from config import INFERENCE_MODEL, REGION, KB_ID
 import os
 import argparse
 
 # ===== CONFIGURATION =====
-# Your Bedrock Knowledge Base ID
-# NOTE YOU NEED TO ENSURE THIS IS CORRECT
-KB_ID = "KP0ZO3GCYU"
-# Parsing model to use
-INFERENCE_MODEL = "us.anthropic.claude-3-7-sonnet-20250219-v1:0"
-# AWS region
-REGION = "us-west-2"             
-
 # Set environment variable for KB
 os.environ["KNOWLEDGE_BASE_ID"] = KB_ID
 

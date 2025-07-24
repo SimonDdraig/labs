@@ -21,7 +21,7 @@ LINKS:
 # This example queries the Bedrock knowledge base created in a previous lab
 # You will need to know its ID
 
-from strands import Agent
+from strands import Agent, tool
 from strands.models import BedrockModel
 from strands_tools import retrieve
 from config import INFERENCE_MODEL, REGION, KB_ID
@@ -81,23 +81,29 @@ You: *"Bitcoin is digital money that isn`t controlled by banks—it`s like cash 
 - Safe: Always ties concepts to risks.
 """
 
-# Create a BedrockModel with specific LLM and region
-bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+@tool
+def crypto_educator(query: str) -> str:
+   """
+   Process and respond to cryptocurrency research-related queries.
 
-# Create the strands agent and add the KB to the agent's tools
-kb_agent = Agent(
-    name="CryptoFocusedAgent",
-    system_prompt=CRYPTO_SYSTEM_PROMPT,
-    model=bedrock_model,
-    tools=[retrieve],
-)
+   Args:
+      query: A cryptocurrency research question.
 
-# Query your Knowledge Base
-response = kb_agent("How do I ensure a cryptocurrency token is legitimate and not a scam?")
+   Returns:
+      A detailed and helpful educational answer with citations
+   """
 
-# Print token usage and metrics
-print(f"\nTotal tokens: {response.metrics.accumulated_usage['totalTokens']}")
-print(f"Input tokens: {response.metrics.accumulated_usage['inputTokens']}")
-print(f"Output tokens: {response.metrics.accumulated_usage['outputTokens']}")
-print(f"Execution time: {sum(response.metrics.cycle_durations):.2f} seconds")
-print(f"Tools used: {list(response.metrics.tool_metrics.keys())}")
+   # Create a BedrockModel with specific LLM and region
+   bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
+
+   # Create the strands agent and add the KB to the agent's tools
+   kb_agent = Agent(
+      name="CryptoFocusedAgent",
+      system_prompt=CRYPTO_SYSTEM_PROMPT,
+      model=bedrock_model,
+      tools=[retrieve],
+   )
+
+   # Query the agent
+   response = kb_agent(query)
+   return response

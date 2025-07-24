@@ -12,16 +12,15 @@ LINKS:
 - MCP Tool: https://strandsagents.com/latest/documentation/docs/user-guide/concepts/tools/mcp-tools/
 """
 
-# This agent queries the Coin Gecko MCP asking for a live token price
+# This example queries the Coin Gecko MCP asking for a live token price
 
-from strands import Agent
+from strands import Agent, tool
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp import stdio_client, StdioServerParameters
-import argparse
 from config import INFERENCE_MODEL, REGION
 
-# ===== SYSTEM PROMPT =====
+# define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """
 # Crypto Price & Market Data Agent (CoinGecko MCP)
 
@@ -78,81 +77,47 @@ If no results are returned or the coin/NFT is not found:
 - Keep responses brief, informative, and neutral (no investment advice).
 """
 
-class CryptoMarketAnalyst:
-    def __init__(self):
-        self.model = self._initialize_model()
-        self.client = self._initialize_mcp_client()
-        self.agent = None
+@tool
+def crypto_market_analyst(query: str) -> str:
+    """
+    Process and respond to real-time crypto market data queries.
 
-    def _initialize_model(self):
-        return BedrockModel(
-            model_id=INFERENCE_MODEL,
-            region_name=REGION
-        )
+    Args:
+        query: A real-time crypto market data question.
 
-    def _initialize_mcp_client(self):
-        # Connect to the CoinGecko MCP server - able to return live prices of tokens - coingecko_api_remote
-        return MCPClient(
-            lambda: stdio_client(
-                StdioServerParameters(
-                    command="npx",  # Matches the "command" in your config
-                    args=[
-                        "mcp-remote",
-                        "https://mcp.api.coingecko.com/sse",  # Matches your endpoint
-                    ],
-                )
+    Returns:
+        A detailed and helpful market analysis with citations
+    """
+
+    # Connect to the CoinGecko MCP server - able to return live prices of tokens - coingecko_api_remote
+    coingecko_mcp_client = MCPClient(
+        lambda: stdio_client(
+            StdioServerParameters(
+                command="npx",  # Matches the "command" in your config
+                args=[
+                    "mcp-remote",
+                    "https://mcp.api.coingecko.com/sse",  # Matches your endpoint
+                ],
             )
         )
+    )
 
-    def query(self, question):
-        """Query the agent and return formatted response"""
-        with self.client:
-            if not self.agent:
-                tools = self.client.list_tools_sync()
-                self.agent = Agent(
-                    name="CryptoMarketAnalystAgent",
-                    system_prompt=CRYPTO_SYSTEM_PROMPT,
-                    model=self.model,
-                    tools=tools
-                )
-            
-            response = self.agent(question)
-            return {
-                "answer": str(response),
-                "metrics": {
-                    "total_tokens": response.metrics.accumulated_usage['totalTokens'],
-                    "input_tokens": response.metrics.accumulated_usage['inputTokens'],
-                    "output_tokens": response.metrics.accumulated_usage['outputTokens'],
-                    "execution_time": f"{sum(response.metrics.cycle_durations):.2f}s",
-                    "tools_used": list(response.metrics.tool_metrics.keys())
-                    }
-            }
-        
-def main():
-    parser = argparse.ArgumentParser(description='Crypto Market Analyst Agent')
-    parser.add_argument('question', nargs='?', help='Your crypto market question')
-    args = parser.parse_args()
-    
-    agent = CryptoMarketAnalyst()
-    
-    if args.question:
-        # Single query mode - Process command-line question
-        result = agent.query(args.question)
-        print(f"\n{result['answer']}\n")
-    else:
-        # Interactive mode
-        print("Crypto Market Analyst Agent (CoinGecko) - Type 'exit' to quit")
-        while True:
-            question = input("\nAsk about crypto markets: ").strip()
-            if question.lower() in ('exit', 'quit'):
-                break
-            if question:
-                result = agent.query(question)
+    # Create a BedrockModel with specific LLM and region
+    bedrock_model = BedrockModel(model_id=INFERENCE_MODEL, region_name=REGION)
 
-    # Print results
-    print("\n=== METRICS ===")
-    for k, v in result["metrics"].items():
-        print(f"{k.replace('_', ' ').title()}: {v}")
+    # Must use the MCP client in a context manager
+    with coingecko_mcp_client:
+        # Get the tools from the MCP server
+        coingecko_tools = coingecko_mcp_client.list_tools_sync()
 
-if __name__ == "__main__":
-    main()
+        # Create the strands agent and add to the agent's tools
+        crypto_agent = Agent(
+            name="CryptoMarketAnalystAgent",
+            system_prompt=CRYPTO_SYSTEM_PROMPT,
+            model=bedrock_model,
+            tools=coingecko_tools,
+        )
+
+        # Query the agent
+        response = crypto_agent(query)
+        return response
