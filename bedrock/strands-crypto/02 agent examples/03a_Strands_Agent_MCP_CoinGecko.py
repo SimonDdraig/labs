@@ -13,6 +13,10 @@ LINKS:
 """
 
 # This example queries the Coin Gecko MCP asking for a live token price
+import sys
+print(sys.executable)
+import strands
+print(dir(strands))
 
 from strands import Agent
 from strands.models import BedrockModel

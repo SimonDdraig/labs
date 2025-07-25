@@ -7,7 +7,7 @@ INFERENCE_MODEL = "amazon.nova-pro-v1:0"
 REGION = "us-east-1"
 
 # Your Bedrock Knowledge Base ID
-KB_ID = "XXXXXXXX"
+KB_ID = "aXXXXXXXX"
 
 if KB_ID == "XXXXXXXX":
     raise RuntimeError("⚠️ Execution stopped: KB_ID is not configured properly.\nFind your Bedrock Knowledge Base ID from a previous lab or in your console, and set in config.py!")

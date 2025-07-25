@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -e
+
+PYTHON_VERSION=3.12.3
+INSTALL_DIR=/usr/src
+VENV_DIR=~/environment/.venv
+
+echo "🔧 Installing build dependencies..."
+sudo yum groupinstall "Development Tools" -y
+sudo yum install gcc openssl-devel bzip2-devel libffi-devel -y
+
+echo "⬇️ Downloading Python $PYTHON_VERSION..."
+cd $INSTALL_DIR
+sudo curl -O https://www.python.org/ftp/python/$PYTHON_VERSION/Python-$PYTHON_VERSION.tgz
+
+echo "📦 Extracting Python source..."
+sudo tar xzf Python-$PYTHON_VERSION.tgz
+cd Python-$PYTHON_VERSION
+
+echo "🔨 Building Python..."
+sudo ./configure --enable-optimizations
+sudo make -j $(nproc)
+sudo make altinstall
+
+echo "✅ Python installed:"
+python3.12 --version
+
+echo "🧪 Creating virtual environment..."
+python3.12 -m venv $VENV_DIR
+source $VENV_DIR/bin/activate
+
+echo "⬆️ Upgrading pip and installing required packages..."
+pip install --upgrade pip
+pip install strands-agents strands-agents-tools
+
+echo "✅ Setup complete. Python $(python --version) and packages installed."
+
+echo "👉 To activate your environment later, run:"
+echo "    source $VENV_DIR/bin/activate"
+
+echo "💡 To make Python 3.12 the default, run:"
+echo "    echo 'alias python=python3.12' >> ~/.bashrc"
+echo "    echo 'alias pip=pip3.12' >> ~/.bashrc"
+echo "    source ~/.bashrc"
