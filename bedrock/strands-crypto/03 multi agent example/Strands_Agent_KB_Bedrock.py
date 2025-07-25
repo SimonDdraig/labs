@@ -25,9 +25,11 @@ from strands import Agent, tool
 from strands.models import BedrockModel
 from strands_tools import retrieve
 from config import INFERENCE_MODEL, REGION, KB_ID
-
-# kb created in previous lab
 import os
+
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
 os.environ["KNOWLEDGE_BASE_ID"] = KB_ID
 
 # Define a crypto-focused system prompt

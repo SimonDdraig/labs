@@ -19,6 +19,11 @@ from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 from mcp import stdio_client, StdioServerParameters
 from config import INFERENCE_MODEL, REGION
+import os
+
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
 
 # define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """

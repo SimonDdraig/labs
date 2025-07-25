@@ -20,6 +20,11 @@ from strands.tools.mcp import MCPClient
 from mcp import stdio_client, StdioServerParameters
 import argparse
 from config import INFERENCE_MODEL, REGION
+import os
+
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
 
 # ===== SYSTEM PROMPT =====
 CRYPTO_SYSTEM_PROMPT = """

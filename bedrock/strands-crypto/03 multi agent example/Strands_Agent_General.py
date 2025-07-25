@@ -19,6 +19,11 @@ LINKS:
 from strands import Agent, tool
 from strands.models import BedrockModel
 from config import INFERENCE_MODEL, REGION
+import os
+
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
 
 # Define a general knowledge focused system prompt
 GENERAL_SYSTEM_PROMPT = """

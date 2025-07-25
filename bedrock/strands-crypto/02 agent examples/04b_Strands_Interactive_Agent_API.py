@@ -27,6 +27,11 @@ from strands.models import BedrockModel
 from strands_tools import http_request
 import argparse
 from config import INFERENCE_MODEL, REGION
+import os
+
+# ===== CONFIGURATION =====
+# Set environment variables
+os.environ["AWS_REGION"] = REGION
 
 # Define a crypto-focused system prompt
 CRYPTO_SYSTEM_PROMPT = """

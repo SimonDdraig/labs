@@ -29,8 +29,9 @@ import os
 import argparse
 
 # ===== CONFIGURATION =====
-# Set environment variable for KB
+# Set environment variables
 os.environ["KNOWLEDGE_BASE_ID"] = KB_ID
+os.environ["AWS_REGION"] = REGION
 
 # ===== SYSTEM PROMPT =====
 CRYPTO_SYSTEM_PROMPT = """
